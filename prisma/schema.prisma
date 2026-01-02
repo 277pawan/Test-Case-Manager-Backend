@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique @db.VarChar(50)
+  email        String   @unique @db.VarChar(100)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  role         String   @default("tester") @db.VarChar(20) // admin, test-lead, tester, read-only
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  createdProjects    Project[]         @relation("ProjectCreator")
+  projectMemberships ProjectMember[]
+  createdTestSuites  TestSuite[]       @relation("TestSuiteCreator")
+  createdTestCases   TestCase[]        @relation("TestCaseCreator")
+  testExecutions     TestExecution[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  description String?  @db.Text
+  version     String?  @db.VarChar(20)
+  status      String   @default("active") @db.VarChar(20) // active, archived
+  createdBy   Int?     @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  creator        User?           @relation("ProjectCreator", fields: [createdBy], references: [id])
+  members        ProjectMember[]
+  testSuites     TestSuite[]
+  testCases      TestCase[]
+
+  @@index([status])
+  @@map("projects")
+}
+
+model ProjectMember {
+  projectId Int    @map("project_id")
+  userId    Int    @map("user_id")
+  role      String @default("member") @db.VarChar(20)
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@map("project_members")
+}
+
+model TestSuite {
+  id          Int      @id @default(autoincrement())
+  projectId   Int      @map("project_id")
+  name        String   @db.VarChar(100)
+  description String?  @db.Text
+  createdBy   Int?     @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator   User?      @relation("TestSuiteCreator", fields: [createdBy], references: [id])
+  testCases TestCase[]
+
+  @@map("test_suites")
+}
+
+model TestCase {
+  id             Int      @id @default(autoincrement())
+  projectId      Int      @map("project_id")
+  suiteId        Int?     @map("suite_id")
+  title          String   @db.VarChar(200)
+  description    String?  @db.Text
+  priority       String?  @db.VarChar(10) // Low, Medium, High, Critical
+  type           String?  @db.VarChar(20) // Functional, Integration, Regression, Smoke, UI, API
+  preConditions  String?  @map("pre_conditions") @db.Text
+  postConditions String?  @map("post_conditions") @db.Text
+  createdBy      Int?     @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  isDeleted      Boolean  @default(false) @map("is_deleted")
+
+  // Relations
+  project        Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  suite          TestSuite?      @relation(fields: [suiteId], references: [id], onDelete: SetNull)
+  creator        User?           @relation("TestCaseCreator", fields: [createdBy], references: [id])
+  steps          TestStep[]
+  executions     TestExecution[]
+
+  @@index([projectId])
+  @@index([suiteId])
+  @@map("test_cases")
+}
+
+model TestStep {
+  id             Int      @id @default(autoincrement())
+  testCaseId     Int      @map("test_case_id")
+  stepNumber     Int      @map("step_number")
+  action         String   @db.Text
+  expectedResult String   @map("expected_result") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@map("test_steps")
+}
+
+model TestExecution {
+  id            Int      @id @default(autoincrement())
+  testCaseId    Int      @map("test_case_id")
+  executedBy    Int?     @map("executed_by")
+  status        String?  @db.VarChar(10) // Pass, Fail, Blocked, Skipped, Pending
+  actualResult  String?  @map("actual_result") @db.Text
+  comments      String?  @db.Text
+  executionDate DateTime @default(now()) @map("execution_date") @db.Timestamptz(6)
+
+  // Relations
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  executor User?    @relation(fields: [executedBy], references: [id])
+
+  @@index([testCaseId])
+  @@index([executedBy])
+  @@map("test_executions")
+}
