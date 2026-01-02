@@ -27,7 +27,8 @@ async function runMigrations() {
         const migrations = [
             'add_test_case_status.sql',
             'add_execution_permissions.sql',
-            'add_assigned_to_column.sql'
+            'add_assigned_to_column.sql',
+            'add_comments_table.sql'
         ];
 
         for (const migration of migrations) {
