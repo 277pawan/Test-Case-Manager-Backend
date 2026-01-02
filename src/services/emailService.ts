@@ -1,23 +1,15 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // true for 465, false for other ports
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const sendAssignmentEmail = async (to: string, testCaseTitle: string, assignerName: string, testCaseId: number, projectId: number) => {
     try {
-        const info = await transporter.sendMail({
-            from: '"Test Case Manager" <no-reply@testcasemanager.com>',
-            to,
+        const { data, error } = await resend.emails.send({
+            from: 'Test Case Manager <onboarding@resend.dev>',
+            to: [to], // Note: onboarding@resend.dev can only send to the registered email in free tier
             subject: `New Test Case Assigned: ${testCaseTitle}`,
             html: `
                 <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
@@ -40,10 +32,15 @@ export const sendAssignmentEmail = async (to: string, testCaseTitle: string, ass
             `,
         });
 
-        console.log('Message sent: %s', info.messageId);
+        if (error) {
+            console.error('Error sending email:', error);
+            return false;
+        }
+
+        console.log('Email sent successfully:', data);
         return true;
     } catch (error) {
-        console.error('Error sending email:', error);
+        console.error('Exception sending email:', error);
         return false;
     }
 };
