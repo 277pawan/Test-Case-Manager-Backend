@@ -49,6 +49,16 @@ A comprehensive test case management system with role-based access control, exec
   - Redis-based caching for improved performance
   - Automatic cache invalidation on data updates
 
+- **Email Notifications**
+  - Instant email alerts when a user is assigned to a test case
+  - Supports Gmail and Resend
+  - Customizable HTML templates
+
+- **Collaborative Comments**
+  - Discuss test cases with team members
+  - Real-time comment updates
+  - Delete own comments
+
 ## 🛠️ Tech Stack
 
 - **Runtime**: Node.js
