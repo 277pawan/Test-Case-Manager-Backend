@@ -24,7 +24,7 @@ export const sendAssignmentEmail = async (to: string, testCaseTitle: string, ass
 
                     <p>Please log in to the system to review and execute the test case.</p>
                     
-                    <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/projects/${projectId}/test-cases/${testCaseId}" 
+                    <a href="${process.env.FRONTEND_URL || 'https://test-case-manager-frontend.vercel.app'}/projects/${projectId}/test-cases/${testCaseId}" 
                        style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
                         View Test Case
                     </a>
